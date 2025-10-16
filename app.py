@@ -1,3 +1,4 @@
+from azure.core.credentials import AzureKeyCredential
 from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import FunctionTool, ToolSet, MessageRole
 import os
@@ -17,7 +18,7 @@ api_key = os.getenv("AZURE_API_KEY")
 if "client" not in st.session_state:
     st.session_state.client = AgentsClient(
         endpoint=project_endpoint,
-        credential=api_key  # << replaces DefaultAzureCredential
+        credential = AzureKeyCredential(api_key)  # << replaces DefaultAzureCredential
     )
     toolset = ToolSet()
     toolset.add(FunctionTool(user_functions))
