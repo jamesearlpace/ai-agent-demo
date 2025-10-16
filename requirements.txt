@@ -1,4 +1,4 @@
 streamlit
-azure-ai-agents
+azure-ai-agents>=1.0.0b4
 azure-identity
 python-dotenv
