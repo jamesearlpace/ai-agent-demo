@@ -1,4 +1,58 @@
 import streamlit as st
-st.title("AI Agent Demo")
-st.write("Hello world! If you see this, Streamlit works.")
+from dotenv import load_dotenv
+import os
+from azure.identity import DefaultAzureCredential
+from azure.ai.agents import AgentsClient
+from azure.ai.agents.models import FunctionTool, ToolSet, MessageRole
+from user_functions import user_functions
 
+load_dotenv()
+
+st.set_page_config(page_title="AI Support Agent")
+st.title("AI Support Agent")
+
+project_endpoint = os.getenv("PROJECT_ENDPOINT")
+model_deployment = os.getenv("MODEL_DEPLOYMENT_NAME")
+
+if "client" not in st.session_state:
+    st.session_state.client = AgentsClient(
+        endpoint=project_endpoint,
+        credential=DefaultAzureCredential(
+            exclude_environment_credential=True,
+            exclude_managed_identity_credential=True
+        )
+    )
+    toolset = ToolSet()
+    toolset.add(FunctionTool(user_functions))
+    st.session_state.client.enable_auto_function_calls(toolset)
+    st.session_state.agent = st.session_state.client.create_agent(
+        model=model_deployment,
+        name="support-agent",
+        instructions="You are a helpful support assistant that can log issues using available functions.",
+        toolset=toolset
+    )
+    st.session_state.thread = st.session_state.client.threads.create()
+    st.session_state.history = []
+
+prompt = st.chat_input("Ask something...")
+if prompt:
+    st.session_state.history.append(("user", prompt))
+    st.session_state.client.messages.create(
+        thread_id=st.session_state.thread.id,
+        role="user",
+        content=prompt
+    )
+    run = st.session_state.client.runs.create_and_process(
+        thread_id=st.session_state.thread.id,
+        agent_id=st.session_state.agent.id
+    )
+    msg = st.session_state.client.messages.get_last_message_text_by_role(
+        thread_id=st.session_state.thread.id,
+        role=MessageRole.AGENT
+    )
+    answer = msg.text.value if msg else "No response."
+    st.session_state.history.append(("agent", answer))
+
+for role, text in st.session_state.history:
+    with st.chat_message(role):
+        st.markdown(text)
