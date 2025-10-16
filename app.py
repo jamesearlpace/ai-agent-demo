@@ -1,9 +1,8 @@
-import streamlit as st
-from dotenv import load_dotenv
-import os
-from azure.identity import DefaultAzureCredential
 from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import FunctionTool, ToolSet, MessageRole
+import os
+from dotenv import load_dotenv
+import streamlit as st
 from user_functions import user_functions
 
 load_dotenv()
@@ -13,14 +12,12 @@ st.title("AI Support Agent")
 
 project_endpoint = os.getenv("PROJECT_ENDPOINT")
 model_deployment = os.getenv("MODEL_DEPLOYMENT_NAME")
+api_key = os.getenv("AZURE_API_KEY")
 
 if "client" not in st.session_state:
     st.session_state.client = AgentsClient(
         endpoint=project_endpoint,
-        credential=DefaultAzureCredential(
-            exclude_environment_credential=True,
-            exclude_managed_identity_credential=True
-        )
+        credential=api_key  # << replaces DefaultAzureCredential
     )
     toolset = ToolSet()
     toolset.add(FunctionTool(user_functions))
@@ -28,7 +25,7 @@ if "client" not in st.session_state:
     st.session_state.agent = st.session_state.client.create_agent(
         model=model_deployment,
         name="support-agent",
-        instructions="You are a helpful support assistant that can log issues using available functions.",
+        instructions="You are a helpful support assistant.",
         toolset=toolset
     )
     st.session_state.thread = st.session_state.client.threads.create()
