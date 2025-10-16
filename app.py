@@ -1,6 +1,5 @@
-from azure.core.credentials import AzureKeyCredential
 from azure.ai.agents import AgentsClient
-from azure.ai.agents.models import FunctionTool, ToolSet, MessageRole
+from azure.ai.agents.models import OpenAIKeyCredential, FunctionTool, ToolSet, MessageRole
 import os
 from dotenv import load_dotenv
 import streamlit as st
@@ -18,7 +17,7 @@ api_key = os.getenv("AZURE_API_KEY")
 if "client" not in st.session_state:
     st.session_state.client = AgentsClient(
         endpoint=project_endpoint,
-        credential = AzureKeyCredential(api_key)  # << replaces DefaultAzureCredential
+        credential=OpenAIKeyCredential(api_key)  # correct credential type
     )
     toolset = ToolSet()
     toolset.add(FunctionTool(user_functions))
